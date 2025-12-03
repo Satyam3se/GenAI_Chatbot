@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Onboarding Chatbot{% endblock %}
+
+{% block content %}
+    <div class="bg-gray-100 flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-lg h-screen flex flex-col">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">AI Onboarding Chatbot</h1>
+
+            <div id="chat-box" class="flex-1 overflow-y-auto border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
+                <!-- Chat messages will be appended here -->
+                <div class="flex justify-start mb-2">
+                    <div class="bg-blue-200 text-blue-800 p-3 rounded-lg max-w-xs">
+                        Hello! How can I help you today?
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading-indicator" class="flex justify-start mb-2 hidden">
+                <div class="bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xs">
+                    AI is typing...
+                </div>
+            </div>
+
+            <div class="flex">
+                <input type="text" id="user-input" placeholder="Type your message..."
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <button id="send-button"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-r-md">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_body %}
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            appendMessage(message, 'user');
+            userInput.value = '';
+            loadingIndicator.classList.remove('hidden'); // Show loading indicator
+
+            try {
+                const response = await fetch('/chat/send_message/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({ message: message }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    appendMessage(data.message, 'ai');
+                } else {
+                    console.error('Error sending message:', response.statusText);
+                    appendMessage('Sorry, something went wrong.', 'ai');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                appendMessage('Sorry, something went wrong.', 'ai');
+            } finally {
+                loadingIndicator.classList.add('hidden'); // Hide loading indicator
+            }
+        }
+
+        function appendMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'mb-2');
+            if (sender === 'user') {
+                messageElement.classList.add('justify-end');
+                messageElement.innerHTML = `
+                    <div class="bg-indigo-500 text-white p-3 rounded-lg max-w-xs">
+                        ${message}
+                    </div>
+                `;
+            } else {
+                messageElement.classList.add('justify-start');
+                messageElement.innerHTML = `
+                    <div class="bg-blue-200 text-blue-800 p-3 rounded-lg max-w-xs">
+                        ${message}
+                    </div>
+                `;
+            }
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
+        }
+
+        async function loadChatHistory() {
+            try {
+                const response = await fetch('/chat/history/');
+                if (response.ok) {
+                    const data = await response.json();
+                    data.history.forEach(msg => {
+                        appendMessage(msg.message, msg.sender);
+                    });
+                } else {
+                    console.error('Error loading chat history:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadChatHistory);
+    </script>
+{% endblock %}

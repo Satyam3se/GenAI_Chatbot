@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Buddy AI{% endblock %}</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header Navigation -->
+    <header class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-gray-900">
+                <span class="text-primary-buddy mr-1">B</span> Buddy AI
+            </h1>
+            <nav class="space-x-4">
+                <a href="{% url 'main:index' %}#demo" class="text-gray-600 hover:text-primary-buddy transition duration-150 font-medium">Get a Demo</a>
+                <a href="{% url 'chat_app:chat_interface' %}" class="bg-primary-buddy text-white hover:bg-cyan-700 font-bold px-4 py-2 rounded-lg border border-primary-buddy transition duration-150 shadow-md">Try Chatbot</a>
+                <a href="{% url 'dashboard:dashboard_view' %}" class="text-gray-600 hover:text-primary-buddy transition duration-150 font-medium">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer (Simple) -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto text-center text-sm">
+            &copy; 2025 Buddy AI. Built for the Onboarding Solution.
+        </div>
+    </footer>
+
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

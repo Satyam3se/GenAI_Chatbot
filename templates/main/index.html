@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Buddy AI - Your Onboarding Assistant{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero-bg py-20 sm:py-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-12">
+            
+            <!-- Marketing Content -->
+            <div class="lg:w-1/2 text-center lg:text-left">
+                <span class="inline-block bg-primary-buddy text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-4 shadow-lg">
+                    Onboarding Revolutionized
+                </span>
+                <h2 class="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+                    Launch Your New Hires with <span class="text-primary-buddy">Buddy AI</span>
+                </h2>
+                <p class="text-xl text-gray-700 mb-8 max-w-lg lg:mx-0 mx-auto">
+                    The intelligent assistant that answers every question about benefits, policies, and IT setup—instantly and accurately.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <a href="#demo" class="bg-primary-buddy text-white font-bold py-3 px-8 rounded-xl shadow-xl hover:bg-cyan-700 transition duration-300 transform hover:scale-105">
+                        Request a Personalized Demo
+                    </a>
+                    <a href="{% url 'chat_app:chat_interface' %}" class="bg-white text-primary-buddy font-bold py-3 px-8 rounded-xl shadow-xl border border-primary-buddy hover:bg-gray-100 transition duration-300 transform hover:scale-105">
+                        See the Chatbot in Action
+                    </a>
+                </div>
+            </div>
+
+            <!-- Lead Capture Form -->
+            <div id="demo" class="lg:w-1/2 w-full max-w-md mt-10 lg:mt-0">
+                <div class="floating-card p-8 rounded-2xl shadow-2xl border border-gray-200">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Get Your Free Demo</h3>
+                    
+                    <!-- NOTE: Form submission logic usually lives on the server (like Django views). -->
+                    <!-- This placeholder action demonstrates where the data would go. -->
+                    <form action="{% url 'main:index' %}" method="post" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <input type="text" name="name" id="name" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary-buddy focus:border-primary-buddy shadow-sm transition duration-150"
+                                placeholder="John Doe">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Work Email</label>
+                            <input type="email" name="email" id="email" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary-buddy focus:border-primary-buddy shadow-sm transition duration-150"
+                                placeholder="john.doe@company.com">
+                        </div>
+                        <div>
+                            <label for="company" class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                            <input type="text" name="company" id="company" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary-buddy focus:border-primary-buddy shadow-sm transition duration-150"
+                                placeholder="Acme Corp">
+                        </div>
+                        
+                        <button type="submit"
+                            class="w-full bg-primary-buddy text-white font-bold py-3 rounded-xl hover:bg-cyan-700 transition duration-300 shadow-lg mt-4">
+                            Schedule Demo Call
+                        </button>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-4 text-center">We respect your privacy. No spam, ever.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
