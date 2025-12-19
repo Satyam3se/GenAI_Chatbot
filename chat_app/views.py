@@ -1,12 +1,12 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from .models import ChatMessage, FAQ # Import FAQ model
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
 import os
 from django.conf import settings
 from django.db import models
-from GENAI.ai_utils import get_ai_response
+from GENAI.ai_utils import get_ai_response, get_ai_response_stream
 
 
 def get_faq_answer(query):
@@ -45,30 +45,42 @@ def chat_interface(request):
 @csrf_protect
 def send_message(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        user_message = data.get('message')
+        user_message = None
+        image_file = None
 
-        if user_message:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            user_message = data.get('message')
+        else: # multipart/form-data
+            user_message = request.POST.get('message')
+            image_file = request.FILES.get('image')
+
+        if user_message or image_file:
             current_user = request.user if request.user.is_authenticated else None
             # Save user message
             ChatMessage.objects.create(user=current_user, sender='user', message=user_message)
 
-            ai_response = None
-            # Try to get answer from FAQ first
-            faq_answer = get_faq_answer(user_message)
-            if faq_answer:
-                ai_response = faq_answer
-            else:
-                ai_response = get_ai_response(user_message)
-                if not ai_response:
-                    ai_response = "I apologize, but I cannot answer that question at the moment. Please try rephrasing your question or contact HR for further assistance."
-            
-            if ai_response:
-                # Save AI response
-                ChatMessage.objects.create(user=current_user, sender='ai', message=ai_response)
-                return JsonResponse({'message': ai_response})
-            else:
-                return JsonResponse({'error': 'No response generated'}, status=500)
+            # Try to get answer from FAQ first (only for text messages)
+            if not image_file:
+                faq_answer = get_faq_answer(user_message)
+                if faq_answer:
+                    # Save AI response (from FAQ)
+                    ChatMessage.objects.create(user=current_user, sender='ai', message=faq_answer)
+                    return JsonResponse({'message': faq_answer})
+
+            # If no FAQ answer or if there is an image, stream from Gemini
+            def stream_response():
+                full_response = []
+                for chunk in get_ai_response_stream(user_message, image_file=image_file):
+                    full_response.append(chunk)
+                    yield chunk
+                
+                # After streaming, save the full response
+                ai_message = "".join(full_response)
+                if ai_message:
+                    ChatMessage.objects.create(user=current_user, sender='ai', message=ai_message)
+
+            return StreamingHttpResponse(stream_response(), content_type='text/plain')
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
