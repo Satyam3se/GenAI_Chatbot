@@ -1,54 +1,96 @@
 import os
-import google.generativeai as genai
+from openai import OpenAI
 from django.conf import settings
 from PIL import Image
-
+import base64
 import time
 
 def get_ai_response(prompt, image_file=None):
-    api_key = settings.GOOGLE_API_KEY
+    api_key = settings.GROQ_API_KEY
     if not api_key:
-        return "Google API key not configured."
+        return "Groq API key not configured."
 
-    genai.configure(api_key=api_key)
-
-    model = genai.GenerativeModel('gemini-flash-latest')
-
-    # Simple retry mechanism for 429 errors
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1"
+    )
+    
     max_retries = 3
     for attempt in range(max_retries):
         try:
+            messages = [{"role": "user", "content": []}]
+            
             if image_file:
-                image = Image.open(image_file)
-                response = model.generate_content([prompt, image])
+                with open(image_file, "rb") as image_f:
+                    base64_image = base64.b64encode(image_f.read()).decode('utf-8')
+                
+                messages[0]["content"].append({"type": "text", "text": prompt})
+                messages[0]["content"].append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                })
+                model = "openai/gpt-oss-120b" # Groq vision model
             else:
-                response = model.generate_content(prompt)
-            return response.text.strip()
+                messages[0]["content"] = prompt
+                model = "openai/gpt-oss-120b" # Fast Groq text model
+                
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+            return response.choices[0].message.content.strip()
         except Exception as e:
             if "429" in str(e) and attempt < max_retries - 1:
-                time.sleep(2 ** attempt) # Exponential backoff: 1s, 2s, 4s
+                time.sleep(2 ** attempt)
                 continue
             return f"Error communicating with AI: {e}"
 
-def get_ai_response_stream(prompt, image_file=None):
-    api_key = settings.GOOGLE_API_KEY
+def get_ai_response_stream(prompt, image_file=None, history=None, system_instruction=None):
+    api_key = settings.GROQ_API_KEY
     if not api_key:
-        yield "Google API key not configured."
+        yield "Groq API key not configured."
         return
 
-    genai.configure(api_key=api_key)
-
-    model = genai.GenerativeModel('gemini-flash-latest')
-
-    # Streaming doesn't handle retries as easily mid-stream, but we can try for the initial connection
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.groq.com/openai/v1"
+    )
+    
     try:
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+            
+        if history:
+            for item in history:
+                role = "assistant" if item['role'] == "model" else item['role']
+                content = item['parts'][0] if 'parts' in item else item.get('content', '')
+                messages.append({"role": role, "content": content})
+                
         if image_file:
-            image = Image.open(image_file)
-            responses = model.generate_content([prompt, image], stream=True)
+            model = "openai/gpt-oss-120b" # Groq vision model
+            with open(image_file, "rb") as image_f:
+                base64_image = base64.b64encode(image_f.read()).decode('utf-8')
+            
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                ]
+            })
         else:
-            responses = model.generate_content(prompt, stream=True)
+            model = "openai/gpt-oss-120b" # Fast Groq text model
+            messages.append({"role": "user", "content": prompt})
+            
+        responses = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True
+        )
         
         for response in responses:
-            yield response.text
+            if response.choices and len(response.choices) > 0 and response.choices[0].delta.content is not None:
+                yield response.choices[0].delta.content
     except Exception as e:
         yield f"Error communicating with AI: {e}"

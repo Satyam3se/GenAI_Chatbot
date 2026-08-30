@@ -129,7 +129,15 @@ OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # Google API Key
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 
+# Groq API Key
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Auth redirects
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/chat/'
+LOGOUT_REDIRECT_URL = '/'

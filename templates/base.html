@@ -19,10 +19,25 @@
             <h1 class="text-3xl font-extrabold text-gray-900">
                 <span class="text-primary-buddy mr-1">B</span> Buddy AI
             </h1>
-            <nav class="space-x-4">
+            <nav class="space-x-4 flex items-center">
                 <a href="{% url 'main:index' %}#demo" class="text-gray-600 hover:text-primary-buddy transition duration-150 font-medium">Get a Demo</a>
                 <a href="{% url 'chat_app:chat_interface' %}" class="bg-primary-buddy text-white hover:bg-cyan-700 font-bold px-4 py-2 rounded-lg border border-primary-buddy transition duration-150 shadow-md">Try Chatbot</a>
                 <a href="{% url 'dashboard:dashboard_view' %}" class="text-gray-600 hover:text-primary-buddy transition duration-150 font-medium">Dashboard</a>
+                
+                {% if user.is_authenticated %}
+                    <span class="text-sm font-semibold text-indigo-600 border-l pl-4 ml-4">
+                        Hi, {{ user.username }} 
+                        {% if user.profile %}
+                            ({{ user.profile.get_role_display }})
+                        {% endif %}
+                    </span>
+                    <a href="{% url 'main:logout' %}" class="text-gray-600 hover:text-red-500 transition duration-150 font-medium">Logout</a>
+                {% else %}
+                    <span class="border-l pl-4 ml-4 flex space-x-3">
+                        <a href="{% url 'main:login' %}" class="text-gray-600 hover:text-indigo-600 transition duration-150 font-medium">Log in</a>
+                        <a href="{% url 'main:signup' %}" class="text-indigo-600 hover:text-indigo-800 transition duration-150 font-bold">Sign up</a>
+                    </span>
+                {% endif %}
             </nav>
         </div>
     </header>
