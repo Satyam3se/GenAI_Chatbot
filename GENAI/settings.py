@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-%p=fc#a@0i0ogt0gvejah_x^ii(u*lo!k3-(f3g2-er)ts#rbv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['genai-chatbot-1pw2.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
